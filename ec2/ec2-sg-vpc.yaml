@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template sets up an EC2 instance with Security Groups.
+
+# Parameters
+Parameters:
+  SecurityGroupDescription:
+    Description: Security group
+    Type: String
+
+  SecurityGroupPort:
+    Description: Number of Port of Security Group with MinValue and MaxValue.
+    Type: Number
+    MinValue: 1150
+    MaxValue: 65535
+
+  SecurityGroupIngressCIDR:
+    Description: The IP address range that can be used to communicate to the EC2 instance.
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: Must be a valid IP CIDR range of x.x.x.x/x.
+
+  pInstanceType:
+    Description: WebServer EC2 Instance t2.small.
+    Type: String
+    Default: t2.micro 
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  pImageId:
+    Description: The AMI to use.
+    Type: String
+    Default: ami-04902260ca3d33422
+
+  pVpcId:
+    Description: VPC ID to operate in.
+    Type: AWS::EC2::VPC::Id
+
+  pSubnetId:
+    Description: Subnet ID that is a list of subnet ID.
+    Type: List<AWS::EC2::Subnet::Id>
+
+# Resources
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref pInstanceType
+      ImageId: !Ref pImageId
+      SubnetId: !Join [",", !Ref pSubnetId] 
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref SecurityGroupDescription
+      SecurityGroupIngress:
+        - CidrIp: !Ref SecurityGroupIngressCIDR
+          FromPort: !Ref SecurityGroupPort
+          ToPort: !Ref SecurityGroupPort
+          IpProtocol: tcp
+      VpcId: !Ref pVpcId

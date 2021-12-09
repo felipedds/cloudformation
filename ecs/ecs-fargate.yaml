@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template sets up an ECS/Fargate instance.
+
+Parameters:
+  TechTeamEmail:
+    Type: String
+    Default: 'felipe_dds@yahoo.com.br'
+  EcsClusterName:
+    Type: String
+    Default: 'ecs-cluster-inframetricas'
+  FeatureName:
+    Type: String
+    Default: 'Assessoriainvestimentos'
+  MicroServiceName:
+    Type: String
+    Default: 'metricas'
+
+Resources:
+  # CloudWatch
+  CloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: !Sub '${FeatureName}-${MicroServiceName}'
+      RetentionInDays: 7
+
+  404MetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties: 
+      LogGroupName: !Sub '${FeatureName}-${MicroServiceName}'
+      FilterPattern: '[ip, identity, user_id, timestamp, request, status_code = 404, size]'
+      MetricTransformations:
+        - MetricValue: '1'
+          MetricNamespace: !Sub '${FeatureName}-${MicroServiceName}/404s'
+          MetricName: !Sub '${FeatureName}-${MicroServiceName}/404count'
+    DependsOn: CloudWatchLogGroup
+
+  404Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'Alarm-${FeatureName}-${MicroServiceName}-404s'
+      AlarmDescription: 'Alarm description'
+      MetricName: !Sub '${FeatureName}-${MicroServiceName}/404Count'
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      AlarmActions:
+        - '{{resolve:ssm:/org/member/workload_local_sns_arn:1}}'
+      OKActions:
+        - '{{resolve:ssm:/org/member/workload_local_sns_arn:1}}'
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+    DependsOn: 404MetricFilter
+
+  # Cluster ECS
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref EcsClusterName
+      CapacityProviders: 
+      - FARGATE
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+      Tags:
+        - Key: tech-team-email
+          Value: !Ref TechTeamEmail
