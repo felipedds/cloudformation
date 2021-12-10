@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template sets up a SSM Parameters.
+
+Resources:
+  InstanceType:
+    Type: AWS::SSM::Parameter 
+    Properties:
+      Name: /dev/ec2/instanceType
+      Description: Webserver EC2 Instance Type
+      Type: String
+      Value: t2.micro
