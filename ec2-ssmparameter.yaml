@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template sets up an EC2 instance utilizing SSM Parameters.
+
+Parameters:
+  InstanceType:
+    Description: Webserver EC2 Instance Type
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /dev/ec2/instanceType
+
+  # Public Parameter
+  ImageId: 
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Description: Image Id of EC2
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref ImageId
